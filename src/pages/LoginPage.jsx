@@ -43,8 +43,7 @@ export default function LoginPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <label style={labelStyle}>Password</label>
-              <a href="#" style={{ color: '#3fe56c', fontSize: '12px', textDecoration: 'none', fontFamily: 'monospace' }}>Forgot?</a>
-            </div>
+<button onClick={() => {}} style={{background:'none', border:'none', color:'#3fe56c', fontSize:'12px', fontFamily:'monospace', cursor:'pointer', padding:0}}>Forgot?</button>            </div>
             <input type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required style={inputStyle} />
           </div>
           <button type="submit" disabled={loading}
