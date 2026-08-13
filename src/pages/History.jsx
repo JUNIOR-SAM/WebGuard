@@ -23,28 +23,46 @@ export default function History() {
     {label:'Dashboard', path:'/dashboard'},
     {label:'New Scan', path:'/dashboard'},
     {label:'History', path:'/history'},
+    {label:'Profile', path:'/profile'}, // Added Profile Link
   ];
 
   const SidebarContent = () => (
     <>
-      <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'32px', padding:'0 12px'}}>
+      <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'16px', padding:'0 12px'}}>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
           <path d="M12 2L3 6V12C3 16.55 7.08 20.74 12 22C16.92 20.74 21 16.55 21 12V6L12 2Z" fill="#00c853" opacity="0.2"/>
           <path d="M12 2L3 6V12C3 16.55 7.08 20.74 12 22C16.92 20.74 21 16.55 21 12V6L12 2Z" stroke="#00c853" strokeWidth="1.5"/>
           <path d="M9 12L11 14L15 10" stroke="#00c853" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
-        <span style={{color:'#3fe56c', fontWeight:'bold', fontSize:'16px', fontFamily:'monospace'}}>WebGuard</span>
+        <div>
+          <div style={{color:'#3fe56c', fontWeight:'bold', fontSize:'15px', fontFamily:'monospace', lineHeight:'1'}}>WebGuard</div>
+          <div style={{color:'#6b7280', fontSize:'10px', fontFamily:'monospace'}}>Console</div>
+        </div>
       </div>
+
+      <div style={{ height: '1px', backgroundColor: '#1f2937', margin: '0 0 12px 0' }} />
+
       <div style={{display:'flex', flexDirection:'column', gap:'4px', flex:1}}>
         {navLinks.map((link, i) => (
           <button key={i} onClick={() => { navigate(link.path); setSidebarOpen(false); }}
-            style={{display:'flex', alignItems:'center', gap:'10px', padding:'10px 12px', borderRadius:'8px', border:'none', cursor:'pointer', fontSize:'14px', fontFamily:'monospace', textAlign:'left', backgroundColor: link.label==='History' ? '#00c853' : 'transparent', color: link.label==='History' ? '#000' : '#bbcbb8', fontWeight: link.label==='History' ? 'bold' : 'normal'}}>
+            style={{display:'flex', alignItems:'center', gap:'10px', padding:'10px 12px', borderRadius:'8px', border:'none', cursor:'pointer', fontSize:'13px', fontFamily:'monospace', textAlign:'left', backgroundColor: link.label==='History' ? '#00c853' : 'transparent', color: link.label==='History' ? '#000' : '#bbcbb8', fontWeight: link.label==='History' ? 'bold' : 'normal'}}>
             {link.label}
           </button>
         ))}
       </div>
-      <button onClick={() => navigate('/login')}
-        style={{display:'flex', alignItems:'center', gap:'10px', padding:'10px 12px', borderRadius:'8px', border:'none', cursor:'pointer', fontSize:'14px', fontFamily:'monospace', backgroundColor:'transparent', color:'#bbcbb8', marginTop:'auto'}}>
+
+      <div style={{ height: '1px', backgroundColor: '#1f2937', margin: '12px 0' }} />
+
+      {/* User Profile Block */}
+      <div style={{ padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0a0e1a', border: '1px solid #1f2937', marginBottom: '8px' }}>
+        <div style={{ color: '#6b7280', fontSize: '10px', fontFamily: 'monospace' }}>Admin User</div>
+        <div style={{ color: '#3fe56c', fontSize: '11px', fontFamily: 'monospace' }}>Pro ★</div>
+        <div style={{ color: '#6b7280', fontSize: '10px', fontFamily: 'monospace', marginTop: '2px' }}>Logged in</div>
+      </div>
+
+      {/* Red Logout Button */}
+      <button onClick={() => { navigate('/login'); setSidebarOpen(false); }}
+        style={{display:'flex', alignItems:'center', gap:'10px', padding:'10px 12px', borderRadius:'8px', border:'1px solid #ef444440', cursor:'pointer', fontSize:'13px', fontFamily:'monospace', backgroundColor:'rgba(239, 68, 68, 0.1)', color:'#ef4444', width:'100%', fontWeight:'bold', justifyContent:'center'}}>
         Logout
       </button>
     </>
@@ -65,7 +83,7 @@ export default function History() {
       `}</style>
 
       {/* Desktop Sidebar */}
-      <nav className="desktop-sidebar" style={{width:'220px', minHeight:'100vh', backgroundColor:'#1A1F35', borderRight:'1px solid #2D3748', display:'flex', flexDirection:'column', padding:'24px 12px', position:'fixed', top:0, left:0, zIndex:99}}>
+      <nav className="desktop-sidebar" style={{width:'220px', minHeight:'100vh', backgroundColor:'#111827', borderRight:'1px solid #1f2937', display:'flex', flexDirection:'column', padding:'20px 12px', position:'fixed', top:0, left:0, zIndex:99}}>
         <SidebarContent />
       </nav>
 
@@ -75,7 +93,7 @@ export default function History() {
       )}
 
       {/* Mobile Drawer */}
-      <nav className="mobile-drawer" style={{width:'220px', minHeight:'100vh', backgroundColor:'#1A1F35', borderRight:'1px solid #2D3748', display:'flex', flexDirection:'column', padding:'24px 12px', position:'fixed', top:0, left:0, zIndex:99, transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)', transition:'transform 0.3s ease'}}>
+      <nav className="mobile-drawer" style={{width:'220px', minHeight:'100vh', backgroundColor:'#111827', borderRight:'1px solid #1f2937', display:'flex', flexDirection:'column', padding:'20px 12px', position:'fixed', top:0, left:0, zIndex:99, transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)', transition:'transform 0.3s ease'}}>
         <SidebarContent />
       </nav>
 
@@ -97,12 +115,12 @@ export default function History() {
             placeholder="Search by URL or date..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{backgroundColor:'#1A1F35', border:'1px solid #2D3748', borderRadius:'8px', color:'#dfe2f3', padding:'10px 16px', fontSize:'14px', outline:'none', fontFamily:'monospace', width:'clamp(200px, 40vw, 280px)'}}
+            style={{backgroundColor:'#111827', border:'1px solid #1f2937', borderRadius:'8px', color:'#dfe2f3', padding:'10px 16px', fontSize:'14px', outline:'none', fontFamily:'monospace', width:'clamp(200px, 40vw, 280px)'}}
           />
         </div>
 
         {/* Table */}
-        <div style={{backgroundColor:'#1A1F35', border:'1px solid #2D3748', borderRadius:'12px', overflow:'hidden'}}>
+        <div style={{backgroundColor:'#111827', border:'1px solid #1f2937', borderRadius:'12px', overflow:'hidden'}}>
           <div style={{overflowX:'auto'}}>
             <table style={{width:'100%', borderCollapse:'collapse', minWidth:'500px'}}>
               <thead>
@@ -114,11 +132,11 @@ export default function History() {
               </thead>
               <tbody>
                 {filtered.map((scan, i) => (
-                  <tr key={i} style={{borderTop:'1px solid #2D3748'}}>
+                  <tr key={i} style={{borderTop:'1px solid #1f2937'}}>
                     <td style={{padding:'12px 14px', color:'#bbcbb8', fontSize:'12px', fontFamily:'monospace', whiteSpace:'nowrap'}}>{scan.date}</td>
                     <td style={{padding:'12px 14px', color:'#dfe2f3', fontSize:'13px', fontFamily:'monospace', maxWidth:'200px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{scan.url}</td>
                     <td style={{padding:'12px 14px'}}>
-                      <span style={{backgroundColor:`${scan.color}20`, color:scan.color, padding:'3px 8px', borderRadius:'4px', fontSize:'11px', fontFamily:'monospace', fontWeight:'bold', whiteSpace:'nowrap'}}>
+                      <span style={{backgroundColor:`${scan.color}20`, color:scan.color, padding:'3px 8px', borderRadius:'4px', fontSize:'11px', fontFamily:'monospace', fontWeight:'bold', whiteSpace:'nowrap', border:`1px solid ${scan.color}40`}}>
                         {scan.score}/100
                       </span>
                     </td>
@@ -126,7 +144,7 @@ export default function History() {
                     <td style={{padding:'12px 14px', color:'orange', fontSize:'13px', fontFamily:'monospace', fontWeight:'bold', textAlign:'center'}}>{scan.medium}</td>
                     <td style={{padding:'12px 14px', color:'#3fe56c', fontSize:'13px', fontFamily:'monospace', fontWeight:'bold', textAlign:'center'}}>{scan.low}</td>
                     <td style={{padding:'12px 14px'}}>
-                      <button onClick={() => navigate('/results')} style={{backgroundColor:'transparent', border:'1px solid #2D3748', color:'#3fe56c', padding:'5px 10px', borderRadius:'6px', cursor:'pointer', fontSize:'12px', fontFamily:'monospace', whiteSpace:'nowrap'}}>
+                      <button onClick={() => navigate('/results')} style={{backgroundColor:'transparent', border:'1px solid #374151', color:'#3fe56c', padding:'5px 10px', borderRadius:'6px', cursor:'pointer', fontSize:'12px', fontFamily:'monospace', whiteSpace:'nowrap'}}>
                         View →
                       </button>
                     </td>

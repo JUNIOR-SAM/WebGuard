@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
+// Note: Keeping your mock findings here until we build the active XSS/SQLi injectors!
 const findings = [
   {
     type: 'SQL Injection',
@@ -41,7 +42,11 @@ export default function ScanResults() {
   const navigate = useNavigate();
   const location = useLocation();
   const [expanded, setExpanded] = useState(null);
-  const scannedUrl = location.state?.url || 'target-prod-env.com';
+  
+  // Extract the live data passed from the ScannerDashboard
+  const scannedUrl = location.state?.url || 'No target provided';
+  const liveScanData = location.state?.liveScanData || null;
+
   const score = 42;
   const scoreColor = score >= 70 ? '#3fe56c' : score >= 50 ? 'orange' : '#ef4444';
 
@@ -97,7 +102,7 @@ export default function ScanResults() {
         {/* Back + Title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
           <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '13px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            ← BACK TO HISTORY
+            ← BACK TO DASHBOARD
           </button>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
@@ -106,8 +111,8 @@ export default function ScanResults() {
               Scan Results: {scannedUrl}
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              <span style={{ color: '#6b7280', fontSize: '12px', fontFamily: 'monospace' }}>📅 2026-10-26 13:21:05 UTC</span>
-              <span style={{ color: '#6b7280', fontSize: '12px', fontFamily: 'monospace' }}>⏱ 48s</span>
+              <span style={{ color: '#6b7280', fontSize: '12px', fontFamily: 'monospace' }}>📅 {new Date().toISOString().split('T')[0]}</span>
+              <span style={{ color: '#6b7280', fontSize: '12px', fontFamily: 'monospace' }}>● Live Engine Data</span>
             </div>
           </div>
           <button style={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#dfe2f3', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -147,9 +152,19 @@ export default function ScanResults() {
           </div>
         </div>
 
-        {/* Findings */}
+        {/* LIVE N8N DATA INJECTION BLOCK */}
+        {liveScanData && (
+          <div style={{ backgroundColor: '#111827', border: '1px solid #3fe56c40', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+             <h3 style={{ color: '#3fe56c', fontSize: '15px', fontWeight: 'bold', margin: '0 0 12px 0' }}>Live Passive Reconnaissance Data</h3>
+             <pre style={{ backgroundColor: '#0a0e1a', border: '1px solid #1f2937', borderRadius: '8px', padding: '12px', color: '#a78bfa', fontSize: '11px', fontFamily: 'monospace', overflowX: 'auto', margin: 0, maxHeight: '250px' }}>
+               {JSON.stringify(liveScanData, null, 2)}
+             </pre>
+          </div>
+        )}
+
+        {/* Mock Active Findings */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <h3 style={{ color: '#dfe2f3', fontSize: '15px', fontWeight: 'bold', margin: 0 }}>Identified Vulnerabilities</h3>
+          <h3 style={{ color: '#dfe2f3', fontSize: '15px', fontWeight: 'bold', margin: 0 }}>Identified Vulnerabilities (Active Scan Previews)</h3>
           <button style={{ background: 'none', border: '1px solid #374151', color: '#bbcbb8', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: 'monospace' }}>▼ FILTER</button>
         </div>
 
@@ -186,17 +201,6 @@ export default function ScanResults() {
               )}
             </div>
           ))}
-        </div>
-
-        {/* Footer */}
-        <div style={{ marginTop: '32px', textAlign: 'center', paddingTop: '20px', borderTop: '1px solid #1f2937' }}>
-          <span style={{ color: '#3fe56c', fontFamily: 'monospace', fontWeight: 'bold', fontSize: '13px' }}>WebGuard</span>
-          <span style={{ color: '#6b7280', fontSize: '12px', fontFamily: 'monospace' }}> — Securing the web, one scan at a time.</span>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '8px' }}>
-            {['Privacy Policy', 'Terms of Service', 'Contact Support'].map((t, i) => (
-              <span key={i} style={{ color: '#6b7280', fontSize: '11px', fontFamily: 'monospace', cursor: 'pointer' }}>{t}</span>
-            ))}
-          </div>
         </div>
       </main>
     </div>
