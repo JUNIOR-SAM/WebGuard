@@ -1,41 +1,21 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-// Note: Keeping your mock findings here until we build the active XSS/SQLi injectors!
-const findings = [
+// Fallback data just in case a scan fails during the live presentation, 
+// so you still have a beautiful UI to show!
+const mockFindings = [
   {
-    type: 'SQL Injection',
-    endpoint: '/login',
-    severity: 'HIGH',
-    color: '#ffb4ab',
-    bg: 'rgba(255,180,171,0.08)',
-    status: 'OPEN',
+    type: 'SQL Injection', endpoint: '/login', severity: 'HIGH', color: '#ffb4ab', bg: 'rgba(255,180,171,0.08)', status: 'OPEN',
     description: 'Vulnerability allows an attacker to execute arbitrary SQL commands on the database, potentially leading to unauthorized access or data exfiltration.',
     evidence: `POST /login HTTP/1.1\nHost: target-prod-env.com\nContent-Type: application/json\n\n{"username":"admin' OR '1'='1","password":"test"}`,
-    fix: `// VULNERABLE\nconst query = "SELECT * FROM users WHERE email = '" + email + "'";\n\n// SECURE — parameterized queries\nconst query = "SELECT * FROM users WHERE email = ?";\ndb.execute(query, [email]);`
+    fix: `// SECURE — parameterized queries\nconst query = "SELECT * FROM users WHERE email = ?";\ndb.execute(query, [email]);`
   },
   {
-    type: 'Cross-Site Scripting (XSS)',
-    endpoint: '/search',
-    severity: 'HIGH',
-    color: '#ffb4ab',
-    bg: 'rgba(255,180,171,0.08)',
-    status: 'OPEN',
+    type: 'Cross-Site Scripting (XSS)', endpoint: '/search', severity: 'HIGH', color: '#ffb4ab', bg: 'rgba(255,180,171,0.08)', status: 'OPEN',
     description: 'Reflected XSS on the site parameters. User input is not properly sanitized before being reflected in the HTML response.',
     evidence: `GET /search?q=<script>alert(1)</script>\nHost: target-prod-env.com`,
-    fix: `// VULNERABLE\ndocument.getElementById("out").innerHTML = userInput;\n\n// SECURE\nconst safe = document.createTextNode(userInput);\ndocument.getElementById("out").appendChild(safe);`
-  },
-  {
-    type: 'Missing Security Headers',
-    endpoint: 'All pages',
-    severity: 'LOW',
-    color: '#3fe56c',
-    bg: 'rgba(63,229,108,0.08)',
-    status: 'OPEN',
-    description: 'Strict-Transport-Security (HSTS) header is not set on the main domain response.',
-    evidence: `HTTP/1.1 200 OK\nContent-Type: text/html\n# Missing: Strict-Transport-Security\n# Missing: X-Frame-Options\n# Missing: Content-Security-Policy`,
-    fix: `// Add to your server config\nres.setHeader("Strict-Transport-Security", "max-age=31536000");\nres.setHeader("X-Frame-Options", "DENY");\nres.setHeader("Content-Security-Policy", "default-src 'self'");`
-  },
+    fix: `// SECURE\nconst safe = document.createTextNode(userInput);\ndocument.getElementById("out").appendChild(safe);`
+  }
 ];
 
 export default function ScanResults() {
@@ -47,18 +27,76 @@ export default function ScanResults() {
   const scannedUrl = location.state?.url || 'No target provided';
   const liveScanData = location.state?.liveScanData || null;
 
-  const score = 42;
-  const scoreColor = score >= 70 ? '#3fe56c' : score >= 50 ? 'orange' : '#ef4444';
+  // --- DYNAMIC DATA PARSING ---
+  // Try to extract vulnerabilities from your live n8n data. 
+  // Adjust 'liveScanData.vulnerabilities' based on your actual n8n JSON output key.
+  let rawVulns = [];
+  if (liveScanData && Array.isArray(liveScanData.vulnerabilities)) {
+    rawVulns = liveScanData.vulnerabilities;
+  } else if (liveScanData && Array.isArray(liveScanData.alerts)) {
+    rawVulns = liveScanData.alerts; // ZAP often uses "alerts"
+  }
+
+  // Map live data into the UI format, or fallback to mock data if empty
+  const displayFindings = rawVulns.length > 0 ? rawVulns.map(vuln => {
+    const isHigh = vuln.risk === 'High' || vuln.severity === 'HIGH';
+    const isMed = vuln.risk === 'Medium' || vuln.severity === 'MEDIUM';
+    
+    return {
+      type: vuln.name || vuln.type || 'Unknown Vulnerability',
+      endpoint: vuln.url || vuln.endpoint || 'General',
+      severity: isHigh ? 'HIGH' : (isMed ? 'MEDIUM' : 'LOW'),
+      color: isHigh ? '#ffb4ab' : (isMed ? 'orange' : '#3fe56c'),
+      bg: isHigh ? 'rgba(255,180,171,0.08)' : (isMed ? 'rgba(255,165,0,0.08)' : 'rgba(63,229,108,0.08)'),
+      status: 'OPEN',
+      description: vuln.description || vuln.desc || 'No description provided by scanner.',
+      evidence: vuln.evidence || vuln.attack || 'No direct evidence payload captured.',
+      fix: vuln.solution || vuln.fix || 'Review application logic and sanitize inputs.'
+    };
+  }) : mockFindings;
+
+  // --- DYNAMIC SCORING ---
+  const highCount = displayFindings.filter(f => f.severity === 'HIGH').length;
+  const medCount = displayFindings.filter(f => f.severity === 'MEDIUM').length;
+  const lowCount = displayFindings.filter(f => f.severity === 'LOW').length;
+  const totalCount = displayFindings.length;
+
+  // Start at 100, subtract points based on severity
+  let calculatedScore = 100 - (highCount * 15) - (medCount * 5) - (lowCount * 2);
+  if (calculatedScore < 0) calculatedScore = 0;
+  
+  const scoreColor = calculatedScore >= 70 ? '#3fe56c' : calculatedScore >= 50 ? 'orange' : '#ef4444';
+  const postureStatus = calculatedScore >= 70 ? 'SECURE' : calculatedScore >= 50 ? 'NEEDS ATTENTION' : 'CRITICAL STATUS';
+
+  // --- PDF DOWNLOAD HANDLER ---
+  const handleDownloadPDF = () => {
+    // Expands all accordions before printing so data isn't hidden in the PDF
+    setExpanded('ALL'); 
+    setTimeout(() => {
+      window.print();
+      setExpanded(null); // Collapse back after print dialog opens
+    }, 300);
+  };
 
   return (
     <div style={{ backgroundColor: '#0a0e1a', minHeight: '100vh', color: '#dfe2f3', fontFamily: 'Geist, sans-serif', display: 'flex' }}>
       <style>{`
         @media (max-width: 768px) { .res-sidebar { display: none !important; } .res-main { margin-left: 0 !important; } }
         .finding-card:hover { border-color: rgba(255,255,255,0.15) !important; }
+        
+        /* MAGIC PRINT CSS FOR PDF EXPORT */
+        @media print {
+          body, html, .res-main, div { background-color: white !important; color: black !important; }
+          .res-sidebar, .no-print { display: none !important; }
+          .res-main { margin-left: 0 !important; padding: 0 !important; }
+          .finding-card { border: 1px solid #ccc !important; page-break-inside: avoid; margin-bottom: 20px; box-shadow: none !important; }
+          h2, h3, span, div, pre, p { color: black !important; }
+          pre { border: 1px solid #eee !important; background-color: #f9f9f9 !important; white-space: pre-wrap !important; }
+        }
       `}</style>
 
       {/* Sidebar */}
-      <nav className="res-sidebar" style={{ width: '220px', minHeight: '100vh', backgroundColor: '#111827', borderRight: '1px solid #1f2937', display: 'flex', flexDirection: 'column', padding: '20px 12px', position: 'fixed', top: 0, left: 0, zIndex: 99 }}>
+      <nav className="res-sidebar no-print" style={{ width: '220px', minHeight: '100vh', backgroundColor: '#111827', borderRight: '1px solid #1f2937', display: 'flex', flexDirection: 'column', padding: '20px 12px', position: 'fixed', top: 0, left: 0, zIndex: 99 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', padding: '0 12px' }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
             <path d="M12 2L3 6V12C3 16.55 7.08 20.74 12 22C16.92 20.74 21 16.55 21 12V6L12 2Z" fill="#00c853" opacity="0.2"/>
@@ -100,7 +138,7 @@ export default function ScanResults() {
       <main className="res-main" style={{ marginLeft: '220px', flex: 1, padding: '24px', overflowY: 'auto' }}>
 
         {/* Back + Title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+        <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
           <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '13px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '4px' }}>
             ← BACK TO DASHBOARD
           </button>
@@ -112,10 +150,12 @@ export default function ScanResults() {
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
               <span style={{ color: '#6b7280', fontSize: '12px', fontFamily: 'monospace' }}>📅 {new Date().toISOString().split('T')[0]}</span>
-              <span style={{ color: '#6b7280', fontSize: '12px', fontFamily: 'monospace' }}>● Live Engine Data</span>
+              <span style={{ color: '#6b7280', fontSize: '12px', fontFamily: 'monospace' }}>
+                {rawVulns.length > 0 ? '● Live Engine Data' : '○ Demo Data (No live results received)'}
+              </span>
             </div>
           </div>
-          <button style={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#dfe2f3', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button onClick={handleDownloadPDF} className="no-print" style={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#dfe2f3', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '6px' }}>
             ↓ DOWNLOAD PDF REPORT
           </button>
         </div>
@@ -126,11 +166,10 @@ export default function ScanResults() {
           <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             <div style={{ color: '#6b7280', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Security Posture</div>
             <div style={{ width: '90px', height: '90px', borderRadius: '50%', border: `4px solid ${scoreColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', boxShadow: `0 0 20px ${scoreColor}40` }}>
-              <span style={{ fontSize: '26px', fontWeight: 'bold', color: scoreColor, fontFamily: 'monospace', lineHeight: 1 }}>{score}</span>
+              <span style={{ fontSize: '26px', fontWeight: 'bold', color: scoreColor, fontFamily: 'monospace', lineHeight: 1 }}>{calculatedScore}</span>
               <span style={{ fontSize: '10px', color: '#6b7280', fontFamily: 'monospace' }}>/ 100</span>
             </div>
-            <div style={{ color: scoreColor, fontSize: '12px', fontFamily: 'monospace', fontWeight: 'bold', textAlign: 'center' }}>● CRITICAL STATUS</div>
-            <div style={{ color: '#6b7280', fontSize: '11px', fontFamily: 'monospace', textAlign: 'center' }}>Immediate remediation required</div>
+            <div style={{ color: scoreColor, fontSize: '12px', fontFamily: 'monospace', fontWeight: 'bold', textAlign: 'center' }}>● {postureStatus}</div>
           </div>
 
           {/* Threat Summary */}
@@ -138,10 +177,10 @@ export default function ScanResults() {
             <div style={{ color: '#6b7280', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px' }}>Threat Summary</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
               {[
-                { label: 'TOTAL', value: '8', color: '#dfe2f3' },
-                { label: 'HIGH', value: '3', color: '#ef4444' },
-                { label: 'MEDIUM', value: '2', color: 'orange' },
-                { label: 'LOW', value: '3', color: '#3fe56c' },
+                { label: 'TOTAL', value: totalCount, color: '#dfe2f3' },
+                { label: 'HIGH', value: highCount, color: '#ef4444' },
+                { label: 'MEDIUM', value: medCount, color: 'orange' },
+                { label: 'LOW', value: lowCount, color: '#3fe56c' },
               ].map((s, i) => (
                 <div key={i} style={{ textAlign: 'center', padding: '12px 8px', backgroundColor: '#0a0e1a', borderRadius: '8px', border: '1px solid #1f2937' }}>
                   <div style={{ fontSize: '22px', fontWeight: 'bold', color: s.color, fontFamily: 'monospace' }}>{s.value}</div>
@@ -152,24 +191,13 @@ export default function ScanResults() {
           </div>
         </div>
 
-        {/* LIVE N8N DATA INJECTION BLOCK */}
-        {liveScanData && (
-          <div style={{ backgroundColor: '#111827', border: '1px solid #3fe56c40', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-             <h3 style={{ color: '#3fe56c', fontSize: '15px', fontWeight: 'bold', margin: '0 0 12px 0' }}>Live Passive Reconnaissance Data</h3>
-             <pre style={{ backgroundColor: '#0a0e1a', border: '1px solid #1f2937', borderRadius: '8px', padding: '12px', color: '#a78bfa', fontSize: '11px', fontFamily: 'monospace', overflowX: 'auto', margin: 0, maxHeight: '250px' }}>
-               {JSON.stringify(liveScanData, null, 2)}
-             </pre>
-          </div>
-        )}
-
-        {/* Mock Active Findings */}
+        {/* Live Findings List */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <h3 style={{ color: '#dfe2f3', fontSize: '15px', fontWeight: 'bold', margin: 0 }}>Identified Vulnerabilities (Active Scan Previews)</h3>
-          <button style={{ background: 'none', border: '1px solid #374151', color: '#bbcbb8', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: 'monospace' }}>▼ FILTER</button>
+          <h3 style={{ color: '#dfe2f3', fontSize: '15px', fontWeight: 'bold', margin: 0 }}>Identified Vulnerabilities</h3>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {findings.map((f, i) => (
+          {displayFindings.map((f, i) => (
             <div key={i} className="finding-card" style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '12px', overflow: 'hidden', transition: 'border-color 0.2s' }}>
               {/* Finding Header */}
               <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', cursor: 'pointer' }} onClick={() => setExpanded(expanded === i ? null : i)}>
@@ -177,14 +205,14 @@ export default function ScanResults() {
                   <span style={{ backgroundColor: f.bg, color: f.color, padding: '3px 10px', borderRadius: '4px', fontSize: '11px', fontFamily: 'monospace', fontWeight: 'bold', border: `1px solid ${f.color}40` }}>{f.severity}</span>
                   <span style={{ color: '#dfe2f3', fontSize: '15px', fontWeight: 'bold' }}>{f.type} in {f.endpoint}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ color: '#ef4444', fontSize: '11px', fontFamily: 'monospace' }}>● {f.status}</span>
-                  <span style={{ color: '#6b7280', fontSize: '16px' }}>{expanded === i ? '▲' : '▼'}</span>
+                  <span style={{ color: '#6b7280', fontSize: '16px' }}>{expanded === i || expanded === 'ALL' ? '▲' : '▼'}</span>
                 </div>
               </div>
 
               {/* Expanded Content */}
-              {expanded === i && (
+              {(expanded === i || expanded === 'ALL') && (
                 <div style={{ borderTop: '1px solid #1f2937', padding: '20px' }}>
                   <p style={{ color: '#9ca3af', fontSize: '14px', lineHeight: 1.6, margin: '0 0 16px' }}>{f.description}</p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '16px' }}>
@@ -193,7 +221,7 @@ export default function ScanResults() {
                       <pre style={{ backgroundColor: '#0a0e1a', border: '1px solid #1f2937', borderRadius: '8px', padding: '12px', color: '#f87171', fontSize: '11px', fontFamily: 'monospace', overflowX: 'auto', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{f.evidence}</pre>
                     </div>
                     <div>
-                      <div style={{ color: '#3fe56c', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Recommended Fix (Node.js/React)</div>
+                      <div style={{ color: '#3fe56c', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Recommended Fix</div>
                       <pre style={{ backgroundColor: '#0a0e1a', border: '1px solid #1f2937', borderRadius: '8px', padding: '12px', color: '#86efac', fontSize: '11px', fontFamily: 'monospace', overflowX: 'auto', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{f.fix}</pre>
                     </div>
                   </div>
