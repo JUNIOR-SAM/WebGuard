@@ -7,7 +7,8 @@ import Dashboard from './pages/Dashboard';
 import ScanResults from './pages/ScanResults';
 import History from './pages/History';
 import Profile from './pages/Profile';
-import ScannerDashboard from './components/ScannerDashboard'; // <-- Imported the new component
+import ResetPassword from './pages/ResetPassword';
+import ScannerDashboard from './components/ScannerDashboard';
 
 function App() {
   return (
@@ -18,13 +19,11 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          
-          {/* Added the new route to test the n8n backend connection */}
-          <Route path="/scanner" element={<ScannerDashboard />} /> 
-          
+          <Route path="/scanner" element={<ScannerDashboard />} />
           <Route path="/results" element={<ScanResults />} />
           <Route path="/history" element={<History />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
       </Router>
     </div>

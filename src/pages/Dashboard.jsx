@@ -75,8 +75,8 @@ export default function Dashboard() {
     if (!validUrl) { setScanError('Please enter a valid URL or domain name'); return; }
     setScanning(true);
     try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_N8N_WEBHOOK || 'http://localhost:5678'}/webhook/vulnerability-scan`,
+     const response = await axios.post(
+  `${process.env.REACT_APP_N8N_WEBHOOK || 'https://api.webguardapp.site'}/webhook/vulnerability-scan`,
         { url: validUrl },
         { timeout: 120000 }
       );
