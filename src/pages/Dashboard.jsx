@@ -74,12 +74,14 @@ export default function Dashboard() {
     const validUrl = isValidUrl(url);
     if (!validUrl) { setScanError('Please enter a valid URL or domain name'); return; }
     setScanning(true);
+    
     try {
-     const response = await axios.post(
-  'https://34.237.45.252.nip.io/webhook/vulnerability-scan',
-        { url: validUrl },
-        { timeout: 120000 }
+      const response = await axios.post(
+        'https://34.237.45.252.nip.io/webhook/vulnerability-scan',
+        { targetUrl: validUrl },
+        { timeout: 120000 } // 2-minute timeout for ZAP & scanner pipeline
       );
+
       navigate('/results', { state: { url: validUrl, liveScanData: response.data } });
     } catch (error) {
       console.error('Scan error:', error);
@@ -143,14 +145,12 @@ export default function Dashboard() {
 
       <div style={{ height: '1px', backgroundColor: '#1f2937', margin: '12px 0' }} />
 
-      {/* User Profile Block */}
       <div style={{ padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0a0e1a', border: '1px solid #1f2937', marginBottom: '8px' }}>
         <div style={{ color: '#6b7280', fontSize: '10px', fontFamily: 'monospace' }}>Admin User</div>
         <div style={{ color: '#3fe56c', fontSize: '11px', fontFamily: 'monospace' }}>Pro ★</div>
         <div style={{ color: '#6b7280', fontSize: '10px', fontFamily: 'monospace', marginTop: '2px' }}>Logged in</div>
       </div>
 
-      {/* RED Logout Button (Triggers Modal) */}
       <button onClick={() => { setLogoutModal(true); onNavigate && onNavigate(); }}
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #ef444440', cursor: 'pointer', fontSize: '13px', fontFamily: 'monospace', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', width: '100%', fontWeight: 'bold' }}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -169,20 +169,15 @@ export default function Dashboard() {
         @media (max-width: 768px) { .desk-sidebar { display: none !important; } .main-area { margin-left: 0 !important; } }
         @media (min-width: 769px) { .mob-bar { display: none !important; } }
         @media (max-width: 600px) { .scan-form { flex-direction: column !important; } .top-grid { grid-template-columns: 1fr !important; } .stats-grid { grid-template-columns: repeat(2, 1fr) !important; } }
-        
-        /* FIXED: Moved placeholder CSS into the style tag! */
         .scan-form input::placeholder { color: rgba(223, 226, 243, 0.18); }
       `}</style>
 
-      {/* Desktop Sidebar */}
       <nav className="desk-sidebar" style={{ width: '220px', minHeight: '100vh', backgroundColor: '#111827', borderRight: '1px solid #1f2937', display: 'flex', flexDirection: 'column', padding: '20px 12px', position: 'fixed', top: 0, left: 0, zIndex: 99, overflowY: 'auto' }}>
         <SidebarContent />
       </nav>
 
-      {/* Mobile Overlay */}
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 97 }} />}
 
-      {/* Mobile Drawer */}
       <nav style={{ width: '220px', minHeight: '100vh', backgroundColor: '#111827', borderRight: '1px solid #1f2937', display: 'flex', flexDirection: 'column', padding: '20px 12px', position: 'fixed', top: 0, left: 0, zIndex: 98, transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)', transition: 'transform 0.3s ease' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <span style={{ color: '#3fe56c', fontWeight: 'bold', fontFamily: 'monospace' }}>WebGuard</span>
@@ -191,17 +186,13 @@ export default function Dashboard() {
         <SidebarContent onNavigate={() => setSidebarOpen(false)} />
       </nav>
 
-      {/* Main */}
       <main className="main-area" style={{ marginLeft: '220px', flex: 1, padding: '24px', minHeight: '100vh', overflowY: 'auto' }}>
-
-        {/* Mobile topbar */}
         <div className="mob-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: '1px solid #2D3748', color: '#dfe2f3', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>☰</button>
           <span style={{ color: '#3fe56c', fontWeight: 'bold', fontFamily: 'monospace' }}>WebGuard</span>
           <div style={{ width: 40 }} />
         </div>
 
-        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <h2 style={{ color: '#dfe2f3', fontSize: 'clamp(18px, 4vw, 26px)', fontWeight: 'bold', margin: '0 0 6px' }}>
@@ -223,7 +214,6 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Scan + Total Scans */}
         <div className="top-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '16px', marginBottom: '16px' }}>
           <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '12px', padding: '20px', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, #00c853, transparent)', opacity: 0.5 }} />
@@ -274,7 +264,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Risk Stats */}
         <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
           {[
             { label: '● HIGH RISK FOUND', value: '12', color: '#ffb4ab', icon: '⚠' },
@@ -289,7 +278,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Recent Scans */}
         <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '12px', overflow: 'hidden' }}>
           <div style={{ padding: '14px 20px', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0f1623' }}>
             <h3 style={{ color: '#dfe2f3', fontSize: '15px', fontWeight: 'bold', margin: 0 }}>Recent Scans</h3>
@@ -325,7 +313,6 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Logout Modal */}
       {logoutModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
           <div style={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '12px', padding: '28px', maxWidth: '360px', width: '100%', textAlign: 'center' }}>
