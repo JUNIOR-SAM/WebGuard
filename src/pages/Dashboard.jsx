@@ -76,7 +76,7 @@ export default function Dashboard() {
     setScanning(true);
     try {
      const response = await axios.post(
-  `${process.env.REACT_APP_N8N_WEBHOOK || 'https://api.webguardapp.site'}/webhook/vulnerability-scan`,
+  'https://34.237.45.252.nip.io/webhook/vulnerability-scan',
         { url: validUrl },
         { timeout: 120000 }
       );
